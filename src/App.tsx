@@ -1,62 +1,111 @@
 import React from 'react';
+import Konva from "konva";
 import './App.css';
 import Webcam from "react-webcam";
+import {Stage, Layer, Group, Image as KonvaImage, Text as KonvaText} from "react-konva";
+import { Layer as LayerC } from 'konva/lib/Layer';
+import { Stage as StageC } from 'konva/lib/Stage';
+import { Group as GroupC } from 'konva/lib/Group';
+
+// さんぷるなので、コンポーネント分割とか考えずに全部ここに書く
 
 const WebcamCapture = () => {
+  // 強制的にレンダリングさせる関数。使いたくなかったが、、、
+  // Webカメラの再生開始後にCanvasを再生成するのに使う
+  const [, forceUpdate] = React.useReducer(x => x+1, 0)
+
+  //** Webカメラの元画像用の処理 **//
+  //WebCamからCanvasにvideoを渡すのに使う
   const webcamRef = React.useRef<Webcam>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const [imgSrc, setImgSrc] = React.useState<string | null>(null);
-
-  const [text, setText] = React.useState<string>("日本")
-
-  // useEffectの中でsetIntervalを使うとstateが更新されないので、useRefを使う
-  const textRef = React.useRef<string>(text);
-  React.useEffect(() => {
-    textRef.current = text;
-  }, [text]);
-  
-
-  const img = new Image();
-
-
-  //可能なら背面カメラを使用
+  //背面カメラを使用する設定
   const videoConstraints = {
     facingMode: "environment",
   };
 
-  //Canvas描画
-  function drawImg(){
-    const video = webcamRef.current;
-    const canvas = canvasRef.current;
-    if(video && canvas && video.video){
-      let ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-      canvas.width = video.video.videoWidth;
-      canvas.height = video.video.videoHeight;
-      ctx.drawImage(video.video, 0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 50, 100);
-      ctx.font = '28px "Hiragino Kaku Gothic ProN"'
-      ctx.fillStyle = 'rgba(0, 0, 0)'
-      ctx.fillText(textRef.current, 85, 175, 130)
-    }
-  }
+  //** カメラ画像に画像とテキストをCanvas上に重ねる処理 **//
+  // react-konvaを使う
 
-  // 100ms単位でCanvasを更新する
-  React.useEffect(() => {
-    img.onload = () => {
-      const interval = setInterval(() => {
-          drawImg();
-      }, 100);
-      return () => clearInterval(interval)
-    }
-    //onloadの後に書かないと、取得が早すぎて発火しない時がある
-    img.src = "img/placard_syuchusen.png"
+  // 画面キャプチャを撮るときに使う
+  const konvaStageRef = React.useRef<StageC>(null)
+
+  // オブジェクト位置の保持に使う（再描画時にリセットされない為）
+  const konvaGroupRef = React.useRef<GroupC>(null)
+
+  // videoの再生開始に使う。useRefは状態の変化を検知しないのでuseCallback
+  const konvaLayerRef = React.useCallback( (konvaLayer : LayerC | null) =>{
+    const anim = new Konva.Animation(
+      () => {},
+      konvaLayer
+    )
+    anim.start();
   }, []);
 
-  //キャプチャ
+  // カメラ画像に重ねる画像ファイル。どこかでonloadを待つべき？
+  const img = new Image();
+  img.src = "img/placard_syuchusen.png"
+
+  // 画像に重ねるtext
+  const [text, setText] = React.useState<string>("日本")
+
+  // Canvas描画
+  const DrawCanvas = () => {
+    const video = webcamRef.current?.video;
+    const videoW = video?.videoWidth ?? 0
+    const videoH = video?.videoHeight ?? 0
+    const groupPos = konvaGroupRef.current?.getPosition();
+
+    return (
+      <Stage width={videoW} height={videoH} ref={konvaStageRef}>
+        <Layer ref={konvaLayerRef}>
+          <KonvaImage
+            image={video ?? undefined}
+            x={0}
+            y={0}
+            width={videoW}
+            height={videoH}
+          />
+          <Group
+            ref={konvaGroupRef}
+            draggable={true}
+            x={groupPos?.x ?? 50}
+            y={groupPos?.y ?? 100}
+          >
+            <KonvaImage image={img} />
+            <KonvaText 
+              fontFamily={`Hiragino Kaku Gothic ProN`}
+              fontSize={16}
+              text={text}
+              x={35}
+              y={40}
+              width={130}
+              height={50}
+            />
+          </Group>
+        </Layer>
+      </Stage>
+    )
+  }
+
+  //** 画像としてキャプチャする処理 **//
+  const [imgSrc, setImgSrc] = React.useState<string>("")
   const capture = React.useCallback(() => {
-    const imageSrc2 = canvasRef.current?.toDataURL('png') ?? null
-    setImgSrc(imageSrc2);
-  }, [canvasRef, setImgSrc]);
+    const imageSrc = konvaStageRef?.current?.toDataURL() ?? "";
+    setImgSrc(imageSrc);
+  }, [konvaStageRef, setImgSrc]);
+
+  const DrawCapture = () => {
+    return(
+      <>
+        <button onClick={capture}>Capture photo</button><br/>
+        {imgSrc && (
+          <img
+            src={imgSrc} alt="non capture"
+          />
+        )}
+      </>
+    )
+  }
+  
 
   return (
     <>
@@ -67,21 +116,17 @@ const WebcamCapture = () => {
           ref={webcamRef}
           screenshotFormat="image/jpeg"
           videoConstraints={videoConstraints}
+          onPlaying={() => forceUpdate()}
         />
       </div>
       <div>
         - Canvas上にカメラ画像と画像ファイルとテキストを重ねる<br/>
         <input type="text" name="text" value={text} onChange={(event) => setText(event.target.value)} /><br/>
-        <canvas ref={canvasRef} />
+        <DrawCanvas />
       </div>
       <div>
         - ボタンを押すとCanvasをキャプチャする<br/>
-        <button onClick={capture}>Capture photo</button><br/>
-        {imgSrc && (
-          <img
-            src={imgSrc} alt="non capture"
-          />
-        )}
+        <DrawCapture />
       </div>
     </>
   );
