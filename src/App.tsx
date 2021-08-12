@@ -21,6 +21,8 @@ const WebcamCapture = () => {
   const videoConstraints = {
     facingMode: "environment",
   };
+  //そもそも元のカメラ画像は表示する必要ないのでon/offできる用のチェックbox
+  const [check, setCheck] = React.useState<boolean>(false)
 
   //** カメラ画像に画像とテキストをCanvas上に重ねる処理 **//
   // react-konvaを使う
@@ -110,18 +112,37 @@ const WebcamCapture = () => {
   return (
     <>
       <div>
-        - 元のカメラ画像<br/>
+        - 元のカメラ画像
+        <input 
+          type="checkbox"
+          checked={check}
+          onChange={(event:React.ChangeEvent<HTMLInputElement>) => setCheck(event.target.checked)}
+        />
+        <br/>
+        {/* styleを弄って元カメラ画像を消そうとしたが、
+            iOSのsafariだと画面上に元画像が存在していないと動画再生が止まってしまう。
+            とりあえず、透過させて(0,0)に置いて回避した。もっといい方法があるはず。
+        */}
         <Webcam
           audio={false}
           ref={webcamRef}
           screenshotFormat="image/jpeg"
           videoConstraints={videoConstraints}
           onPlaying={() => forceUpdate()}
+          style={check ? {} : {
+            position: 'fixed', top: 0, left: 0, zIndex: -10000, opacity: 0
+          }}
         />
       </div>
       <div>
         - Canvas上にカメラ画像と画像ファイルとテキストを重ねる<br/>
-        <input type="text" name="text" value={text} onChange={(event) => setText(event.target.value)} /><br/>
+        <input
+          type="text"
+          name="text"
+          value={text}
+          onChange={(event :React.ChangeEvent<HTMLInputElement> ) => setText(event.target.value)}
+        />
+        <br/>
         <DrawCanvas />
       </div>
       <div>
