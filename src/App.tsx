@@ -49,6 +49,22 @@ const WebcamCapture = () => {
   // 画像に重ねるtext
   const [text, setText] = React.useState<string>("日本")
 
+  // 元のカメラ画像のサイズ変更を検知して再描画する。iPadで縦横回転検知用。他にいい方法がないか？
+  React.useEffect(() => {
+    const mutationObserver = new ResizeObserver((entries:ResizeObserverEntry[]) => {
+      // サイズ変更検知時の処理
+      forceUpdate();
+    });
+    // サイズ変更を検知するエレメントを設定。今回はカメラ画像
+    webcamRef.current?.video && mutationObserver.observe(
+      webcamRef.current?.video
+    );
+    // 後処理
+    return (): void => {
+      mutationObserver.disconnect();
+    };
+  }, []);
+
   // Canvas描画
   const DrawCanvas = () => {
     const video = webcamRef.current?.video;
