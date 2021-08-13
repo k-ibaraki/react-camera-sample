@@ -51,17 +51,17 @@ const WebcamCapture = () => {
 
   // 元のカメラ画像のサイズ変更を検知して再描画する。iPadで縦横回転検知用。他にいい方法がないか？
   React.useEffect(() => {
-    const mutationObserver = new ResizeObserver((entries:ResizeObserverEntry[]) => {
+    const resizeObserver = new ResizeObserver((entries:ResizeObserverEntry[]) => {
       // サイズ変更検知時の処理
       forceUpdate();
     });
     // サイズ変更を検知するエレメントを設定。今回はカメラ画像
-    webcamRef.current?.video && mutationObserver.observe(
+    webcamRef.current?.video && resizeObserver.observe(
       webcamRef.current?.video
     );
     // 後処理
     return (): void => {
-      mutationObserver.disconnect();
+      resizeObserver.disconnect();
     };
   }, []);
 
@@ -137,6 +137,7 @@ const WebcamCapture = () => {
         <br/>
         {/* styleを弄って元カメラ画像を消そうとしたが、
             iOSのsafariだと画面上に元画像が存在していないと動画再生が止まってしまう。
+            display:noneはダメでwidth:0もダメだったので、
             とりあえず、透過させて(0,0)に置いて回避した。もっといい方法があるはず。
         */}
         <Webcam
