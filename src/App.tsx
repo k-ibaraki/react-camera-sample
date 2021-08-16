@@ -57,7 +57,7 @@ const WebcamCapture = () => {
     });
     // サイズ変更を検知するエレメントを設定。今回はカメラ画像
     webcamRef.current?.video && resizeObserver.observe(
-      webcamRef.current?.video
+      webcamRef.current.video
     );
     // 後処理
     return (): void => {
@@ -68,8 +68,8 @@ const WebcamCapture = () => {
   // Canvas描画
   const DrawCanvas = () => {
     const video = webcamRef.current?.video;
-    const videoW = video?.videoWidth ?? 0
-    const videoH = video?.videoHeight ?? 0
+    const videoW = video?.videoWidth ?? 0;
+    const videoH = video?.videoHeight ?? 0;
     const groupPos = konvaGroupRef.current?.getPosition();
 
     return (
