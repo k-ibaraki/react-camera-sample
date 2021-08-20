@@ -166,6 +166,10 @@ const WebcamCapture = () => {
         - ボタンを押すとCanvasをキャプチャする<br/>
         <DrawCapture />
       </div>
+      <br/><br/><br/><br/>
+      <div>
+        - <a href="https://github.com/k-ibaraki/react-camera-sample">ソースコード</a>
+      </div>
     </>
   );
 };
