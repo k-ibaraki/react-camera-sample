@@ -6,6 +6,7 @@ import {Stage, Layer, Group, Image as KonvaImage, Text as KonvaText} from "react
 import { Layer as LayerC } from 'konva/lib/Layer';
 import { Stage as StageC } from 'konva/lib/Stage';
 import { Group as GroupC } from 'konva/lib/Group';
+import { saveAs } from "file-saver";
 
 // さんぷるなので、コンポーネント分割とか考えずに全部ここに書く
 
@@ -21,8 +22,6 @@ const WebcamCapture = () => {
   const videoConstraints = {
     facingMode: "environment",
   };
-  //そもそも元のカメラ画像は表示する必要ないのでon/offできる用のチェックbox
-  const [check, setCheck] = React.useState<boolean>(false)
 
   //** カメラ画像に画像とテキストをCanvas上に重ねる処理 **//
   // react-konvaを使う
@@ -48,6 +47,9 @@ const WebcamCapture = () => {
 
   // 画像に重ねるtext
   const [text, setText] = React.useState<string>("日本")
+
+  // カメラ画像に重ねる画像+textの表示off/on
+  const [imgCheck, setImgCheck] = React.useState<boolean>(false)
 
   // 元のカメラ画像のサイズ変更を検知して再描画する。iPadで縦横回転検知用。他にいい方法がないか？
   React.useEffect(() => {
@@ -87,10 +89,11 @@ const WebcamCapture = () => {
             draggable={true}
             x={groupPos?.x ?? 50}
             y={groupPos?.y ?? 100}
+            visible={imgCheck}
           >
             <KonvaImage image={img} />
             <KonvaText 
-              fontFamily={`Hiragino Kaku Gothic ProN`}
+              fontFamily={`Sans-serif`}
               fontSize={16}
               text={text}
               x={35}
@@ -105,36 +108,14 @@ const WebcamCapture = () => {
   }
 
   //** 画像としてキャプチャする処理 **//
-  const [imgSrc, setImgSrc] = React.useState<string>("")
   const capture = React.useCallback(() => {
     const imageSrc = konvaStageRef?.current?.toDataURL() ?? "";
-    setImgSrc(imageSrc);
-  }, [konvaStageRef, setImgSrc]);
-
-  const DrawCapture = () => {
-    return(
-      <>
-        <button onClick={capture}>Capture photo</button><br/>
-        {imgSrc && (
-          <img
-            src={imgSrc} alt="non capture"
-          />
-        )}
-      </>
-    )
-  }
-  
+    saveAs(imageSrc, "photo.png")
+  }, [konvaStageRef]);
 
   return (
-    <>
+    <div style={{maxHeight:'80%', maxWidth: '95%'}}>
       <div>
-        - 元のカメラ画像
-        <input 
-          type="checkbox"
-          checked={check}
-          onChange={(event:React.ChangeEvent<HTMLInputElement>) => setCheck(event.target.checked)}
-        />
-        <br/>
         {/* styleを弄って元カメラ画像を消そうとしたが、
             iOSのsafariだと画面上に元画像が存在していないと動画再生が止まってしまう。
             display:noneはダメでwidth:0もダメだったので、
@@ -146,31 +127,45 @@ const WebcamCapture = () => {
           screenshotFormat="image/jpeg"
           videoConstraints={videoConstraints}
           onPlaying={() => forceUpdate()}
-          style={check ? {} : {
+          style={{
             position: 'fixed', top: 0, left: 0, zIndex: -10000, opacity: 0
           }}
         />
       </div>
-      <div>
-        - Canvas上にカメラ画像と画像ファイルとテキストを重ねる<br/>
-        <input
-          type="text"
-          name="text"
-          value={text}
-          onChange={(event :React.ChangeEvent<HTMLInputElement> ) => setText(event.target.value)}
-        />
-        <br/>
+      <div style={{zIndex: 5}}>
+        {/* - Canvas上にカメラ画像と画像ファイルとテキストを重ねる<br/> */}
         <DrawCanvas />
       </div>
-      <div>
-        - ボタンを押すとCanvasをキャプチャする<br/>
-        <DrawCapture />
+      <div style={{zIndex: 10}}>
+        <div style={{
+          position:'absolute',
+          left:'30px',
+          bottom:'50px',
+        }}>
+          <input 
+            type="checkbox"
+            checked={imgCheck}
+            onChange={(event:React.ChangeEvent<HTMLInputElement>) => setImgCheck(event.target.checked)}
+          />
+          <input
+            type="text"
+            name="text"
+            value={text}
+            onChange={(event :React.ChangeEvent<HTMLInputElement> ) => setText(event.target.value)}
+          />
+        </div>
+        <button 
+        onClick={capture}
+        style={{
+          position:'absolute',
+          right:'30px',
+          bottom:'50px',
+        }}
+        >
+          Capture photo
+        </button>
       </div>
-      <br/><br/><br/><br/>
-      <div>
-        - <a href="https://github.com/k-ibaraki/react-camera-sample">ソースコード</a>
-      </div>
-    </>
+    </div>
   );
 };
 
