@@ -2,7 +2,7 @@ import React from 'react';
 import Konva from "konva";
 import './App.css';
 import Webcam from "react-webcam";
-import {Stage, Layer, Group, Image as KonvaImage, Text as KonvaText} from "react-konva";
+import { Stage, Layer, Group, Image as KonvaImage, Text as KonvaText } from "react-konva";
 import { Layer as LayerC } from 'konva/lib/Layer';
 import { Stage as StageC } from 'konva/lib/Stage';
 import { Group as GroupC } from 'konva/lib/Group';
@@ -12,7 +12,7 @@ import { Group as GroupC } from 'konva/lib/Group';
 const WebcamCapture = () => {
   // 強制的にレンダリングさせる関数。使いたくなかったが、、、
   // Webカメラの再生開始後にCanvasを再生成するのに使う
-  const [, forceUpdate] = React.useReducer(x => x+1, 0)
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0)
 
   //** Webカメラの元画像用の処理 **//
   //WebCamからCanvasにvideoを渡すのに使う
@@ -34,9 +34,9 @@ const WebcamCapture = () => {
   const konvaGroupRef = React.useRef<GroupC>(null)
 
   // videoの再生開始に使う。useRefは状態の変化を検知しないのでuseCallback
-  const konvaLayerRef = React.useCallback( (konvaLayer : LayerC | null) =>{
+  const konvaLayerRef = React.useCallback((konvaLayer: LayerC | null) => {
     const anim = new Konva.Animation(
-      () => {},
+      () => { },
       konvaLayer
     )
     anim.start();
@@ -47,11 +47,11 @@ const WebcamCapture = () => {
   img.src = "img/placard_syuchusen.png"
 
   // 画像に重ねるtext
-  const [text, setText] = React.useState<string>("日本")
+  const [text, setText] = React.useState<string>("0.5")
 
   // 元のカメラ画像のサイズ変更を検知して再描画する。iPadで縦横回転検知用。他にいい方法がないか？
   React.useEffect(() => {
-    const resizeObserver = new ResizeObserver((entries:ResizeObserverEntry[]) => {
+    const resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
       // サイズ変更検知時の処理
       forceUpdate();
     });
@@ -73,7 +73,7 @@ const WebcamCapture = () => {
     const groupPos = konvaGroupRef.current?.getPosition();
 
     return (
-      <Stage width={videoW} height={videoH} ref={konvaStageRef}>
+      <Stage width={videoW} height={videoH} ref={konvaStageRef} draggable={true} scaleX={Number(text)} scaleY={Number(text)}>
         <Layer ref={konvaLayerRef}>
           <KonvaImage
             image={video ?? undefined}
@@ -89,7 +89,7 @@ const WebcamCapture = () => {
             y={groupPos?.y ?? 100}
           >
             <KonvaImage image={img} />
-            <KonvaText 
+            <KonvaText
               fontFamily={`Hiragino Kaku Gothic ProN`}
               fontSize={16}
               text={text}
@@ -112,9 +112,9 @@ const WebcamCapture = () => {
   }, [konvaStageRef, setImgSrc]);
 
   const DrawCapture = () => {
-    return(
+    return (
       <>
-        <button onClick={capture}>Capture photo</button><br/>
+        <button onClick={capture}>Capture photo</button><br />
         {imgSrc && (
           <img
             src={imgSrc} alt="non capture"
@@ -123,18 +123,18 @@ const WebcamCapture = () => {
       </>
     )
   }
-  
+
 
   return (
     <>
       <div>
         - 元のカメラ画像
-        <input 
+        <input
           type="checkbox"
           checked={check}
-          onChange={(event:React.ChangeEvent<HTMLInputElement>) => setCheck(event.target.checked)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => setCheck(event.target.checked)}
         />
-        <br/>
+        <br />
         {/* styleを弄って元カメラ画像を消そうとしたが、
             iOSのsafariだと画面上に元画像が存在していないと動画再生が止まってしまう。
             display:noneはダメでwidth:0もダメだったので、
@@ -152,21 +152,25 @@ const WebcamCapture = () => {
         />
       </div>
       <div>
-        - Canvas上にカメラ画像と画像ファイルとテキストを重ねる<br/>
+        - Canvas上にカメラ画像と画像ファイルとテキストを重ねる<br />
         <input
           type="text"
           name="text"
           value={text}
-          onChange={(event :React.ChangeEvent<HTMLInputElement> ) => setText(event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value)}
         />
-        <br/>
-        <DrawCanvas />
+        <br />
+        <div
+          style={{ width: 300, overflow: "auto" }}
+        >
+          <DrawCanvas />
+        </div>
       </div>
       <div>
-        - ボタンを押すとCanvasをキャプチャする<br/>
+        - ボタンを押すとCanvasをキャプチャする<br />
         <DrawCapture />
       </div>
-      <br/><br/><br/><br/>
+      <br /><br /><br /><br />
       <div>
         - <a href="https://github.com/k-ibaraki/react-camera-sample">ソースコード</a>
       </div>
@@ -177,7 +181,7 @@ const WebcamCapture = () => {
 function App() {
   return (
     <WebcamCapture />
- );
+  );
 }
 
 export default App;
